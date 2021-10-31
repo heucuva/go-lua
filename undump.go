@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"math/bits"
 	"unsafe"
 )
 
@@ -61,7 +62,7 @@ func (state *loadState) readBool() (bool, error) {
 
 func (state *loadState) readString() (s string, err error) {
 	// Feel my pain
-	maxUint := ^uint(0)
+	const maxUint = ^uint(0)
 	var size uintptr
 	var size64 uint64
 	var size32 uint32
@@ -253,6 +254,13 @@ func (state *loadState) readFunction() (p prototype, err error) {
 	return
 }
 
+type pointerType uintptr
+
+const (
+	pointerSize     = byte(1+^pointerType(0)>>32&1) * 4
+	instructionSize = byte(1+^instruction(0)>>32&1) * 4
+)
+
 func init() {
 	copy(header.Signature[:], Signature)
 	header.Version = VersionMajor<<4 | VersionMinor
@@ -263,18 +271,15 @@ func init() {
 		header.Endianness = 0
 	}
 	header.IntSize = 4
-	header.PointerSize = byte(1+^uintptr(0)>>32&1) * 4
-	header.InstructionSize = byte(1+^instruction(0)>>32&1) * 4
+	header.PointerSize = pointerSize
+	header.InstructionSize = instructionSize
 	header.NumberSize = 8
 	header.IntegralNumber = 0
 	tail := "\x19\x93\r\n\x1a\n"
 	copy(header.Tail[:], tail)
 
 	// The uintptr numeric type is implementation-specific
-	uintptrBitCount := byte(0)
-	for bits := ^uintptr(0); bits != 0; bits >>= 1 {
-		uintptrBitCount++
-	}
+	uintptrBitCount := byte(bits.OnesCount(uint(^pointerType(0))))
 	if uintptrBitCount != header.PointerSize*8 {
 		panic(fmt.Sprintf("invalid pointer size (%d)", uintptrBitCount))
 	}
