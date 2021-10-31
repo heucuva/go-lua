@@ -482,8 +482,7 @@ var debugLibrary = []RegistryFunction{
 		} else {
 			hookTable(l)
 			l1.PushThread()
-			//			XMove(l1, l, 1)
-			panic("XMove not implemented yet")
+			xMove(l1, l, 1)
 			l.RawGet(-2)
 			l.Remove(-2)
 		}
@@ -543,8 +542,7 @@ var debugLibrary = []RegistryFunction{
 			l.SetMetaTable(-2)
 		}
 		l1.PushThread()
-		//	 	XMove(l1, l, 1)
-		panic("XMove not yet implemented")
+		xMove(l1, l, 1)
 		l.PushValue(i + 1)
 		l.RawSet(-3)
 		SetDebugHook(l1, hook, mask, count)

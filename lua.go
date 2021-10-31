@@ -6,6 +6,7 @@ import (
 	"io"
 	"math"
 	"strings"
+	"unsafe"
 )
 
 // MultipleReturns is the argument for argCount or resultCount in ProtectedCall and Call.
@@ -194,7 +195,30 @@ type Hook func(state *State, activationRecord Debug)
 // A Function is a Go function intended to be called from Lua.
 type Function func(state *State) int
 
-// TODO XMove(from, to State, n int)
+func xMove(from, to *State, n int) {
+	if from == to {
+		return
+	}
+	if apiCheck && n <= (from.top-from.callInfo.function) {
+		panic(fmt.Sprintf("stack slot %d out of range", n))
+	}
+	if apiCheck && from.global == to.global {
+		panic("move across global states")
+	}
+
+	to.checkStack(n)
+	f := from.top
+	t := to.top + n
+	to.top = t
+	for n--; n >= 0; n-- {
+		t--
+		f--
+		to.copyTV(from, f, t)
+	}
+	from.top = f
+}
+
+// TODO
 //
 // Set functions (stack -> Lua)
 // RawSetValue(index int, p interface{})
@@ -260,7 +284,8 @@ func (g *globalState) metaTable(o value) *table {
 		t = TypeNil
 	case bool:
 		t = TypeBoolean
-	// TODO TypeLightUserData
+	case unsafe.Pointer:
+		t = TypeLightUserData
 	case float64:
 		t = TypeNumber
 	case string:
@@ -491,17 +516,17 @@ var none value = &struct{}{}
 func (l *State) indexToValue(index int) value {
 	switch {
 	case index > 0:
-		// TODO apiCheck(index <= callInfo.top_-(callInfo.function+1), "unacceptable index")
-		// if i := callInfo.function + index; i < l.top {
-		// 	return l.stack[i]
-		// }
-		// return none
+		if apiCheck && index < l.callInfo.top-(l.callInfo.function+1) {
+			panic("unacceptable index")
+		}
 		if l.callInfo.function+index >= l.top {
 			return none
 		}
 		return l.stack[l.callInfo.function:l.top][index]
 	case index > RegistryIndex: // negative index
-		// TODO apiCheck(index != 0 && -index <= l.top-(callInfo.function+1), "invalid index")
+		if apiCheck && index != 0 && -index <= l.top-(l.callInfo.function+1) {
+			panic("invalid index")
+		}
 		return l.stack[l.top+index]
 	case index == RegistryIndex:
 		return l.global.registry
@@ -636,8 +661,8 @@ func (l *State) valueToType(v value) Type {
 		return TypeNil
 	case bool:
 		return TypeBoolean
-	// case lightUserData:
-	// 	return TypeLightUserData
+	case unsafe.Pointer:
+		return TypeLightUserData
 	case float64:
 		return TypeNumber
 	case string:
@@ -1372,6 +1397,13 @@ func (l *State) Top() int { return l.top - (l.callInfo.function + 1) }
 //
 // http://www.lua.org/manual/5.2/manual.html#lua_copy
 func (l *State) Copy(from, to int) { l.move(to, l.indexToValue(from)) }
+
+// copyTV copies the element at the index from into the valid index to
+// without shifting any element (therefore replacing the value at that
+// position). This is also done across states
+func (l *State) copyTV(fromState *State, from, to int) {
+	l.setIndexToValue(to, fromState.indexToValue(from))
+}
 
 // Version returns the address of the version number stored in the Lua core.
 //

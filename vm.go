@@ -182,9 +182,10 @@ func (l *State) concat(total int) {
 	l.assert(total >= 2)
 	for total > 1 {
 		n := 2 // # of elements handled in this pass (at least 2)
-		s2, ok := t(2).(string)
-		if !ok {
-			_, ok = t(2).(float64)
+		var ok bool
+		switch t(2).(type) {
+		case string, float64:
+			ok = true
 		}
 		if !ok {
 			concatTagMethod()
@@ -193,7 +194,7 @@ func (l *State) concat(total int) {
 		} else if len(s1) == 0 {
 			v, _ := l.toString(l.top - 2)
 			put(2, v)
-		} else if s2, ok = t(2).(string); ok && len(s2) == 0 {
+		} else if s2, ok := t(2).(string); ok && len(s2) == 0 {
 			put(2, t(1))
 		} else {
 			// at least 2 non-empty strings; scarf as many as possible
