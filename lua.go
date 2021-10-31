@@ -6,6 +6,7 @@ import (
 	"io"
 	"math"
 	"strings"
+	"unsafe"
 )
 
 // MultipleReturns is the argument for argCount or resultCount in ProtectedCall and Call.
@@ -283,7 +284,8 @@ func (g *globalState) metaTable(o value) *table {
 		t = TypeNil
 	case bool:
 		t = TypeBoolean
-	// TODO TypeLightUserData
+	case unsafe.Pointer:
+		t = TypeLightUserData
 	case float64:
 		t = TypeNumber
 	case string:
@@ -659,8 +661,8 @@ func (l *State) valueToType(v value) Type {
 		return TypeNil
 	case bool:
 		return TypeBoolean
-	// case lightUserData:
-	// 	return TypeLightUserData
+	case unsafe.Pointer:
+		return TypeLightUserData
 	case float64:
 		return TypeNumber
 	case string:
