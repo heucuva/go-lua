@@ -194,7 +194,30 @@ type Hook func(state *State, activationRecord Debug)
 // A Function is a Go function intended to be called from Lua.
 type Function func(state *State) int
 
-// TODO XMove(from, to State, n int)
+func xMove(from, to *State, n int) {
+	if from == to {
+		return
+	}
+	if apiCheck && n <= (from.top-from.callInfo.function) {
+		panic(fmt.Sprintf("stack slot %d out of range", n))
+	}
+	if apiCheck && from.global == to.global {
+		panic("move across global states")
+	}
+
+	to.checkStack(n)
+	f := from.top
+	t := to.top + n
+	to.top = t
+	for n--; n >= 0; n-- {
+		t--
+		f--
+		to.copyTV(from, f, t)
+	}
+	from.top = f
+}
+
+// TODO
 //
 // Set functions (stack -> Lua)
 // RawSetValue(index int, p interface{})
@@ -1372,6 +1395,13 @@ func (l *State) Top() int { return l.top - (l.callInfo.function + 1) }
 //
 // http://www.lua.org/manual/5.2/manual.html#lua_copy
 func (l *State) Copy(from, to int) { l.move(to, l.indexToValue(from)) }
+
+// copyTV copies the element at the index from into the valid index to
+// without shifting any element (therefore replacing the value at that
+// position). This is also done across states
+func (l *State) copyTV(fromState *State, from, to int) {
+	l.setIndexToValue(to, fromState.indexToValue(from))
+}
 
 // Version returns the address of the version number stored in the Lua core.
 //
