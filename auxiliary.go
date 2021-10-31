@@ -2,10 +2,12 @@ package lua
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"strings"
+	"syscall"
 )
 
 func functionName(l *State, d Debug) string {
@@ -568,8 +570,254 @@ func FileResult(l *State, err error, filename string) int {
 	} else {
 		l.PushString(err.Error())
 	}
-	l.PushInteger(0) // TODO map err to errno
+	errno, ok := fileErrorToErrno(err)
+	if !ok {
+		errno = 0
+	}
+	l.PushInteger(errno)
 	return 3
+}
+
+func fileErrorToErrno(err error) (errno int, ok bool) {
+	if errors.Is(err, io.ErrClosedPipe) {
+		errno, ok = int(int64(uintptr(syscall.EPIPE))), true
+	} else {
+		switch err.Error() {
+		case "EPERM":
+			errno, ok = int(int64(uintptr(syscall.EPERM))), true
+		case "ENOENT":
+			errno, ok = int(int64(uintptr(syscall.ENOENT))), true
+		case "ESRCH":
+			errno, ok = int(int64(uintptr(syscall.ESRCH))), true
+		case "EINTR":
+			errno, ok = int(int64(uintptr(syscall.EINTR))), true
+		case "EIO":
+			errno, ok = int(int64(uintptr(syscall.EIO))), true
+		case "ENXIO":
+			errno, ok = int(int64(uintptr(syscall.ENXIO))), true
+		case "E2BIG":
+			errno, ok = int(int64(uintptr(syscall.E2BIG))), true
+		case "ENOEXEC":
+			errno, ok = int(int64(uintptr(syscall.ENOEXEC))), true
+		case "EBADF":
+			errno, ok = int(int64(uintptr(syscall.EBADF))), true
+		case "ECHILD":
+			errno, ok = int(int64(uintptr(syscall.ECHILD))), true
+		case "EAGAIN":
+			errno, ok = int(int64(uintptr(syscall.EAGAIN))), true
+		case "ENOMEM":
+			errno, ok = int(int64(uintptr(syscall.ENOMEM))), true
+		case "EACCES":
+			errno, ok = int(int64(uintptr(syscall.EACCES))), true
+		case "EFAULT":
+			errno, ok = int(int64(uintptr(syscall.EFAULT))), true
+		case "EBUSY":
+			errno, ok = int(int64(uintptr(syscall.EBUSY))), true
+		case "EEXIST":
+			errno, ok = int(int64(uintptr(syscall.EEXIST))), true
+		case "EXDEV":
+			errno, ok = int(int64(uintptr(syscall.EXDEV))), true
+		case "ENODEV":
+			errno, ok = int(int64(uintptr(syscall.ENODEV))), true
+		case "ENOTDIR":
+			errno, ok = int(int64(uintptr(syscall.ENOTDIR))), true
+		case "EISDIR":
+			errno, ok = int(int64(uintptr(syscall.EISDIR))), true
+		case "EINVAL":
+			errno, ok = int(int64(uintptr(syscall.EINVAL))), true
+		case "ENFILE":
+			errno, ok = int(int64(uintptr(syscall.ENFILE))), true
+		case "EMFILE":
+			errno, ok = int(int64(uintptr(syscall.EMFILE))), true
+		case "ENOTTY":
+			errno, ok = int(int64(uintptr(syscall.ENOTTY))), true
+		case "EFBIG":
+			errno, ok = int(int64(uintptr(syscall.EFBIG))), true
+		case "ENOSPC":
+			errno, ok = int(int64(uintptr(syscall.ENOSPC))), true
+		case "ESPIPE":
+			errno, ok = int(int64(uintptr(syscall.ESPIPE))), true
+		case "EROFS":
+			errno, ok = int(int64(uintptr(syscall.EROFS))), true
+		case "EMLINK":
+			errno, ok = int(int64(uintptr(syscall.EMLINK))), true
+		case "EPIPE":
+			errno, ok = int(int64(uintptr(syscall.EPIPE))), true
+		case "ENAMETOOLONG":
+			errno, ok = int(int64(uintptr(syscall.ENAMETOOLONG))), true
+		case "ENOSYS":
+			errno, ok = int(int64(uintptr(syscall.ENOSYS))), true
+		case "EDQUOT":
+			errno, ok = int(int64(uintptr(syscall.EDQUOT))), true
+		case "EDOM":
+			errno, ok = int(int64(uintptr(syscall.EDOM))), true
+		case "ERANGE":
+			errno, ok = int(int64(uintptr(syscall.ERANGE))), true
+		case "EDEADLK":
+			errno, ok = int(int64(uintptr(syscall.EDEADLK))), true
+		case "ENOLCK":
+			errno, ok = int(int64(uintptr(syscall.ENOLCK))), true
+		case "ENOTEMPTY":
+			errno, ok = int(int64(uintptr(syscall.ENOTEMPTY))), true
+		case "ELOOP":
+			errno, ok = int(int64(uintptr(syscall.ELOOP))), true
+		case "ENOMSG":
+			errno, ok = int(int64(uintptr(syscall.ENOMSG))), true
+		case "EIDRM":
+			errno, ok = int(int64(uintptr(syscall.EIDRM))), true
+		case "ECHRNG":
+			errno, ok = int(int64(uintptr(syscall.ECHRNG))), true
+		case "EL2NSYNC":
+			errno, ok = int(int64(uintptr(syscall.EL2NSYNC))), true
+		case "EL3HLT":
+			errno, ok = int(int64(uintptr(syscall.EL3HLT))), true
+		case "EL3RST":
+			errno, ok = int(int64(uintptr(syscall.EL3RST))), true
+		case "ELNRNG":
+			errno, ok = int(int64(uintptr(syscall.ELNRNG))), true
+		case "EUNATCH":
+			errno, ok = int(int64(uintptr(syscall.EUNATCH))), true
+		case "ENOCSI":
+			errno, ok = int(int64(uintptr(syscall.ENOCSI))), true
+		case "EL2HLT":
+			errno, ok = int(int64(uintptr(syscall.EL2HLT))), true
+		case "EBADE":
+			errno, ok = int(int64(uintptr(syscall.EBADE))), true
+		case "EBADR":
+			errno, ok = int(int64(uintptr(syscall.EBADR))), true
+		case "EXFULL":
+			errno, ok = int(int64(uintptr(syscall.EXFULL))), true
+		case "ENOANO":
+			errno, ok = int(int64(uintptr(syscall.ENOANO))), true
+		case "EBADRQC":
+			errno, ok = int(int64(uintptr(syscall.EBADRQC))), true
+		case "EBADSLT":
+			errno, ok = int(int64(uintptr(syscall.EBADSLT))), true
+		case "EDEADLOCK":
+			errno, ok = int(int64(uintptr(syscall.EDEADLOCK))), true
+		case "EBFONT":
+			errno, ok = int(int64(uintptr(syscall.EBFONT))), true
+		case "ENOSTR":
+			errno, ok = int(int64(uintptr(syscall.ENOSTR))), true
+		case "ENODATA":
+			errno, ok = int(int64(uintptr(syscall.ENODATA))), true
+		case "ETIME":
+			errno, ok = int(int64(uintptr(syscall.ETIME))), true
+		case "ENOSR":
+			errno, ok = int(int64(uintptr(syscall.ENOSR))), true
+		case "ENONET":
+			errno, ok = int(int64(uintptr(syscall.ENONET))), true
+		case "ENOPKG":
+			errno, ok = int(int64(uintptr(syscall.ENOPKG))), true
+		case "EREMOTE":
+			errno, ok = int(int64(uintptr(syscall.EREMOTE))), true
+		case "ENOLINK":
+			errno, ok = int(int64(uintptr(syscall.ENOLINK))), true
+		case "EADV":
+			errno, ok = int(int64(uintptr(syscall.EADV))), true
+		case "ESRMNT":
+			errno, ok = int(int64(uintptr(syscall.ESRMNT))), true
+		case "ECOMM":
+			errno, ok = int(int64(uintptr(syscall.ECOMM))), true
+		case "EPROTO":
+			errno, ok = int(int64(uintptr(syscall.EPROTO))), true
+		case "EMULTIHOP":
+			errno, ok = int(int64(uintptr(syscall.EMULTIHOP))), true
+		case "EDOTDOT":
+			errno, ok = int(int64(uintptr(syscall.EDOTDOT))), true
+		case "EBADMSG":
+			errno, ok = int(int64(uintptr(syscall.EBADMSG))), true
+		case "EOVERFLOW":
+			errno, ok = int(int64(uintptr(syscall.EOVERFLOW))), true
+		case "ENOTUNIQ":
+			errno, ok = int(int64(uintptr(syscall.ENOTUNIQ))), true
+		case "EBADFD":
+			errno, ok = int(int64(uintptr(syscall.EBADFD))), true
+		case "EREMCHG":
+			errno, ok = int(int64(uintptr(syscall.EREMCHG))), true
+		case "ELIBACC":
+			errno, ok = int(int64(uintptr(syscall.ELIBACC))), true
+		case "ELIBBAD":
+			errno, ok = int(int64(uintptr(syscall.ELIBBAD))), true
+		case "ELIBSCN":
+			errno, ok = int(int64(uintptr(syscall.ELIBSCN))), true
+		case "ELIBMAX":
+			errno, ok = int(int64(uintptr(syscall.ELIBMAX))), true
+		case "ELIBEXEC":
+			errno, ok = int(int64(uintptr(syscall.ELIBEXEC))), true
+		case "EILSEQ":
+			errno, ok = int(int64(uintptr(syscall.EILSEQ))), true
+		case "EUSERS":
+			errno, ok = int(int64(uintptr(syscall.EUSERS))), true
+		case "ENOTSOCK":
+			errno, ok = int(int64(uintptr(syscall.ENOTSOCK))), true
+		case "EDESTADDRREQ":
+			errno, ok = int(int64(uintptr(syscall.EDESTADDRREQ))), true
+		case "EMSGSIZE":
+			errno, ok = int(int64(uintptr(syscall.EMSGSIZE))), true
+		case "EPROTOTYPE":
+			errno, ok = int(int64(uintptr(syscall.EPROTOTYPE))), true
+		case "ENOPROTOOPT":
+			errno, ok = int(int64(uintptr(syscall.ENOPROTOOPT))), true
+		case "EPROTONOSUPPORT":
+			errno, ok = int(int64(uintptr(syscall.EPROTONOSUPPORT))), true
+		case "ESOCKTNOSUPPORT":
+			errno, ok = int(int64(uintptr(syscall.ESOCKTNOSUPPORT))), true
+		case "EOPNOTSUPP":
+			errno, ok = int(int64(uintptr(syscall.EOPNOTSUPP))), true
+		case "EPFNOSUPPORT":
+			errno, ok = int(int64(uintptr(syscall.EPFNOSUPPORT))), true
+		case "EAFNOSUPPORT":
+			errno, ok = int(int64(uintptr(syscall.EAFNOSUPPORT))), true
+		case "EADDRINUSE":
+			errno, ok = int(int64(uintptr(syscall.EADDRINUSE))), true
+		case "EADDRNOTAVAIL":
+			errno, ok = int(int64(uintptr(syscall.EADDRNOTAVAIL))), true
+		case "ENETDOWN":
+			errno, ok = int(int64(uintptr(syscall.ENETDOWN))), true
+		case "ENETUNREACH":
+			errno, ok = int(int64(uintptr(syscall.ENETUNREACH))), true
+		case "ENETRESET":
+			errno, ok = int(int64(uintptr(syscall.ENETRESET))), true
+		case "ECONNABORTED":
+			errno, ok = int(int64(uintptr(syscall.ECONNABORTED))), true
+		case "ECONNRESET":
+			errno, ok = int(int64(uintptr(syscall.ECONNRESET))), true
+		case "ENOBUFS":
+			errno, ok = int(int64(uintptr(syscall.ENOBUFS))), true
+		case "EISCONN":
+			errno, ok = int(int64(uintptr(syscall.EISCONN))), true
+		case "ENOTCONN":
+			errno, ok = int(int64(uintptr(syscall.ENOTCONN))), true
+		case "ESHUTDOWN":
+			errno, ok = int(int64(uintptr(syscall.ESHUTDOWN))), true
+		case "ETOOMANYREFS":
+			errno, ok = int(int64(uintptr(syscall.ETOOMANYREFS))), true
+		case "ETIMEDOUT":
+			errno, ok = int(int64(uintptr(syscall.ETIMEDOUT))), true
+		case "ECONNREFUSED":
+			errno, ok = int(int64(uintptr(syscall.ECONNREFUSED))), true
+		case "EHOSTDOWN":
+			errno, ok = int(int64(uintptr(syscall.EHOSTDOWN))), true
+		case "EHOSTUNREACH":
+			errno, ok = int(int64(uintptr(syscall.EHOSTUNREACH))), true
+		case "EALREADY":
+			errno, ok = int(int64(uintptr(syscall.EALREADY))), true
+		case "EINPROGRESS":
+			errno, ok = int(int64(uintptr(syscall.EINPROGRESS))), true
+		case "ESTALE":
+			errno, ok = int(int64(uintptr(syscall.ESTALE))), true
+		case "ENOTSUP":
+			errno, ok = int(int64(uintptr(syscall.ENOTSUP))), true
+		case "ENOMEDIUM":
+			errno, ok = int(int64(uintptr(syscall.ENOMEDIUM))), true
+		case "ECANCELED":
+			errno, ok = int(int64(uintptr(syscall.ECANCELED))), true
+		case "EWOULDBLOCK":
+			errno, ok = int(int64(uintptr(syscall.EWOULDBLOCK))), true
+		}
+	}
+	return
 }
 
 // DoFile loads and runs the given file.
