@@ -516,17 +516,17 @@ var none value = &struct{}{}
 func (l *State) indexToValue(index int) value {
 	switch {
 	case index > 0:
-		// TODO apiCheck(index <= callInfo.top_-(callInfo.function+1), "unacceptable index")
-		// if i := callInfo.function + index; i < l.top {
-		// 	return l.stack[i]
-		// }
-		// return none
+		if apiCheck && index < l.callInfo.top-(l.callInfo.function+1) {
+			panic("unacceptable index")
+		}
 		if l.callInfo.function+index >= l.top {
 			return none
 		}
 		return l.stack[l.callInfo.function:l.top][index]
 	case index > RegistryIndex: // negative index
-		// TODO apiCheck(index != 0 && -index <= l.top-(callInfo.function+1), "invalid index")
+		if apiCheck && index != 0 && -index <= l.top-(l.callInfo.function+1) {
+			panic("invalid index")
+		}
 		return l.stack[l.top+index]
 	case index == RegistryIndex:
 		return l.global.registry
